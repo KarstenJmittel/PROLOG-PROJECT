@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -15,7 +16,7 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request):
     incidents = database.get_all_incidents()
-    return templates.TemplateResponse("dashboard.html", {"request": request, "incidents": incidents})
+    return templates.TemplateResponse(request, "dashboard.html", {"incidents": incidents})
 
 @app.post("/incident/new")
 def new_incident(location: str = Form(...)):
@@ -25,8 +26,7 @@ def new_incident(location: str = Form(...)):
 @app.get("/incident/{id}", response_class=HTMLResponse)
 def view_incident(request: Request, id: int):
     incident, reports = database.get_incident_data(id)
-    return templates.TemplateResponse("incident.html", {
-        "request": request, 
+    return templates.TemplateResponse(request, "incident.html", {
         "incident": incident, 
         "reports": reports
     })
@@ -36,10 +36,11 @@ def add_incident_report(id: int, source_type: str = Form(...), evidence_category
     database.add_report(id, source_type, evidence_category)
     return RedirectResponse(url=f"/incident/{id}", status_code=303)
 
+
 @app.api_route("/incident/{id}/analyze", methods=["GET", "POST"])
 def analyze_incident(id: int):
     incident, reports = database.get_incident_data(id)
     location = incident["location"] if incident else None
-    diagnosis = prolog_engine.analyze_incident(id, reports, location)
+    diagnosis = prolog_engine.analyze_incident(id, reports, location=location)
     database.update_incident_diagnosis(id, diagnosis)
     return RedirectResponse(url=f"/incident/{id}", status_code=303)
