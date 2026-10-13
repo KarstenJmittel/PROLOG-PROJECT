@@ -37,6 +37,32 @@ def add_incident_report(id: int, source_type: str = Form(...), evidence_category
     return RedirectResponse(url=f"/incident/{id}", status_code=303)
 
 
+@app.get("/report", response_class=HTMLResponse)
+def report_page(request: Request):
+    return templates.TemplateResponse(request, "report.html", {})
+
+@app.post("/report")
+def submit_public_report(
+    location: str = Form(...),
+    source_type: str = Form(...),
+    evidence_category: str = Form(...)
+):
+    incident_id = database.get_or_create_open_incident(location)
+    database.add_report(incident_id, source_type, evidence_category)
+    return RedirectResponse(
+        url=f"/report/success?incident_id={incident_id}&location={location}&source={source_type}&evidence={evidence_category}",
+        status_code=303
+    )
+
+@app.get("/report/success", response_class=HTMLResponse)
+def report_success(request: Request, incident_id: int, location: str, source: str, evidence: str):
+    return templates.TemplateResponse(request, "report_success.html", {
+        "incident_id": incident_id,
+        "location": location,
+        "source_type": source,
+        "evidence_category": evidence
+    })
+
 @app.api_route("/incident/{id}/analyze", methods=["GET", "POST"])
 def analyze_incident(id: int):
     incident, reports = database.get_incident_data(id)
@@ -44,3 +70,7 @@ def analyze_incident(id: int):
     diagnosis = prolog_engine.analyze_incident(id, reports, location=location)
     database.update_incident_diagnosis(id, diagnosis)
     return RedirectResponse(url=f"/incident/{id}", status_code=303)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
