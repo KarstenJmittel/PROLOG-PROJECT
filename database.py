@@ -51,6 +51,20 @@ def create_incident(location):
     conn.close()
     return incident_id
 
+def get_or_create_open_incident(location):
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT id FROM incidents WHERE location = %s AND status != 'RESOLVED' ORDER BY id DESC LIMIT 1", (location,))
+        row = cursor.fetchone()
+        if row:
+            incident_id = row['id']
+        else:
+            cursor.execute('INSERT INTO incidents (location) VALUES (%s) RETURNING id', (location,))
+            incident_id = cursor.fetchone()['id']
+    conn.commit()
+    conn.close()
+    return incident_id
+
 def add_report(incident_id, source_type, evidence_category):
     conn = get_db_connection()
     with conn.cursor() as cursor:
