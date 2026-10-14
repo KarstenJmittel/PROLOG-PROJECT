@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card shadow-sm border-0 mt-4 text-center">
+            <div class="card-body p-5">
+                <div style="font-size: 3.5rem; line-height: 1;" class="mb-3">✅</div>
+                <h2 class="h3 mb-2 fw-bold text-success">Report Successfully Received</h2>
+                <p class="text-muted mb-4">
+                    Your report for <strong>{{ location }}</strong> has been ingested into the GridRescue monitoring queue as Incident <strong>#{{ incident_id }}</strong>.
+                </p>
+
+                <div class="p-3 bg-light rounded text-start mb-4 border">
+                    <div class="row g-2 small">
+                        <div class="col-6"><strong>Reporting Party:</strong> <span class="badge bg-secondary">{{ source_type }}</span></div>
+                        <div class="col-6"><strong>Observed Factor:</strong> <span class="badge bg-warning text-dark">{{ evidence_category }}</span></div>
+                        <div class="col-12 mt-2"><strong>Status:</strong> Dispatched to Control Room for automated root-cause analysis.</div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="/report" class="btn btn-outline-primary">File Another Report</a>
+                    <a href="/" class="btn btn-primary">Go to Operator Console &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

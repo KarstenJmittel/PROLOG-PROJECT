@@ -65,41 +65,83 @@
             </div>
             {% endif %}
         </div>
+
+        {% if incident.upstream_path %}
+        <div class="card shadow-sm mt-4 border-0">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <span class="fw-bold">🗺️ Visual Grid Topology & Fault Isolation Map</span>
+                <span class="badge bg-secondary">Electrical Flow: Substation &rarr; Zone</span>
+            </div>
+            <div class="card-body bg-light p-3">
+                <p class="text-muted small mb-2">Hierarchical transmission path identified by Prolog deduction. The suspect root failure point is highlighted in pulsing red:</p>
+                <div class="topology-wrapper">
+                    {% for node in incident.upstream_path.split(' -> ') %}
+                        {% set is_suspect = (node == incident.suspect_component) %}
+                        <div class="topology-node {% if is_suspect %}faulty{% else %}healthy{% endif %}">
+                            <div class="topology-icon">
+                                {% if 'substation' in node %}⚡
+                                {% elif 'feeder' in node %}🔌
+                                {% elif 'transformer' in node %}🔄
+                                {% elif 'hospital' in node %}🏥
+                                {% elif 'industrial' in node %}🏭
+                                {% elif 'commercial' in node %}🏢
+                                {% else %}🏠{% endif %}
+                            </div>
+                            <div class="topology-tier">
+                                {% if 'substation' in node %}HV Substation
+                                {% elif 'feeder' in node %}Distribution Feeder
+                                {% elif 'transformer' in node %}Step-Down Transformer
+                                {% else %}Consumer Grid Zone{% endif %}
+                            </div>
+                            <div class="topology-name">{{ node.replace('_', ' ').title() }}</div>
+                            <div class="topology-status">
+                                {% if is_suspect %}
+                                    <span class="badge bg-danger">🚨 SUSPECT FAULT</span>
+                                {% else %}
+                                    <span class="badge bg-success">✓ Transmitting</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if not loop.last %}
+                        <div class="topology-arrow">&rarr;</div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
         {% endif %}
 
         <div class="card shadow-sm mt-4">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <span class="fw-bold">➕ Add New Evidence Factor</span>
-                <span class="badge bg-light text-primary">Multi-Source</span>
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <span class="fw-bold">⚡ Log SCADA Telemetry or Field Crew Report</span>
+                <span class="badge bg-secondary">Utility Internal Only</span>
             </div>
             <div class="card-body">
+                <p class="text-muted small mb-3">Record internal grid sensor telemetry (SCADA breaker cutoffs) or radio reports from dispatched linemen. Citizen and commercial reports arrive automatically from the <a href="/report" target="_blank">Public Portal</a>.</p>
                 <form action="/incident/{{ incident.id }}/report" method="post" class="row g-3">
 
                     <div class="col-md-5">
-                        <label class="form-label fw-bold">Source</label>
+                        <label class="form-label fw-bold">Internal Source</label>
                         <select name="source_type" class="form-select" required>
-                            <option value="" disabled selected>Choose source...</option>
-                            <option value="citizen">Citizen</option>
-                            <option value="engineer">Engineer</option>
-                            <option value="control_room">Control Room</option>
-                            <option value="factory">Factory</option>
+                            <option value="" disabled selected>Choose internal source...</option>
+                            <option value="control_room">Control Room (SCADA Automated Telemetry)</option>
+                            <option value="engineer">Lineman / Field Inspection Crew</option>
                         </select>
                     </div>
 
                     <div class="col-md-5">
-                        <label class="form-label fw-bold">Evidence Factor</label>
+                        <label class="form-label fw-bold">Technical Observation / Sensor Alert</label>
                         <select name="evidence_category" class="form-select" required>
-                            <option value="" disabled selected>Choose evidence...</option>
-                            <option value="power_outage">Power Outage</option>
-                            <option value="sparks_on_pole">Sparks on Pole</option>
-                            <option value="broken_wire">Broken Wire</option>
-                            <option value="feeder_trip">Feeder Tripped</option>
-                            <option value="transformer_abnormal">Transformer Abnormal</option>
+                            <option value="" disabled selected>Choose technical reading...</option>
+                            <option value="feeder_trip">Feeder Tripped (SCADA Breaker Cutoff Alert)</option>
+                            <option value="transformer_abnormal">Transformer Abnormal (Overheating / Noise / Oil Pressure)</option>
+                            <option value="broken_wire">Broken Wire / Downed Conductor Confirmed</option>
                         </select>
                     </div>
 
                     <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100 fw-bold">Add</button>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">+ Log Telemetry</button>
                     </div>
 
                 </form>
@@ -108,10 +150,12 @@
 
         <div class="card shadow-sm mt-4 mb-5">
             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <span class="fw-bold">📊 Correlated Reports (Prolog Facts)</span>
+                <div>
+                    <span class="fw-bold">📊 Aggregated Evidence (Prolog Dynamic Facts)</span>
+                    <span class="badge bg-secondary ms-2">Auto-synced from Citizen Portal & Telemetry</span>
+                </div>
                 <form action="/incident/{{ incident.id }}/analyze" method="post" class="m-0">
-                    <button type="submit" class="btn btn-sm btn-warning fw-bold text-dark">⚙️ Run Prolog Tree
-                        Analysis</button>
+                    <button type="submit" class="btn btn-sm btn-warning fw-bold text-dark">⚙️ Run Prolog Tree Analysis</button>
                 </form>
             </div>
             <div class="card-body p-0">

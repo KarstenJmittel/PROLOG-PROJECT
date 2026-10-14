@@ -2,8 +2,11 @@
 {% block content %}
 <div class="row mb-4 align-items-center">
     <div class="col-md-6">
-        <h2 class="mb-0">Active Grid Incidents</h2>
-        <p class="text-muted small mb-0">Live grid monitoring & tree-based automated root-cause diagnostics</p>
+        <div class="d-flex align-items-center gap-2">
+            <h2 class="mb-0">Active Grid Incidents</h2>
+            <span class="badge bg-secondary">Operator Console</span>
+        </div>
+        <p class="text-muted small mb-0">Live grid monitoring, SCADA event correlation & Prolog root-cause inference</p>
     </div>
     <div class="col-md-6 text-end">
         <form action="/incident/new" method="POST" class="d-flex">
@@ -14,9 +17,17 @@
                 <option value="industrial_park">industrial_park (Substation Central / Trans B1 - HIGH)</option>
                 <option value="hospital_hub">hospital_hub (Substation North / Trans C1 - CRITICAL)</option>
             </select>
-            <button type="submit" class="btn btn-primary text-nowrap fw-bold">+ New Incident</button>
+            <button type="submit" class="btn btn-primary text-nowrap fw-bold">+ Manual Incident</button>
         </form>
     </div>
+</div>
+
+<div class="alert alert-info py-3 mb-4 shadow-sm d-flex justify-content-between align-items-center" role="alert">
+    <div>
+        <strong>ℹ️ Public Incident Intake Active:</strong> Citizens, commercial plants, and field inspectors can submit observations via the 
+        <a href="/report" class="fw-bold">Public Report Portal</a> without accessing diagnostic tools.
+    </div>
+    <a href="/report" class="btn btn-sm btn-outline-primary ms-3 text-nowrap">Open Public Form &rarr;</a>
 </div>
 
 <div class="card shadow-sm mb-5">
