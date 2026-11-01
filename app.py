@@ -28,11 +28,16 @@ templates = Jinja2Templates(directory="templates")
 def dashboard(request: Request, status: Optional[str] = None):
     incidents = database.get_all_incidents(status_filter=status)
     try:
+        recent_reports = database.get_recent_reports(limit=10)
+    except Exception:
+        recent_reports = []
+    try:
         stats = database.get_incident_stats()
     except Exception:
-        stats = {"total": len(incidents), "active": 0, "diagnosed": 0, "resolved": 0}
+        stats = {"total": len(incidents), "active": 0, "diagnosed": 0, "resolved": 0, "total_reports": 0}
     return templates.TemplateResponse(request, "dashboard.html", {
         "incidents": incidents,
+        "recent_reports": recent_reports,
         "stats": stats,
         "current_filter": status or "all"
     })
@@ -71,6 +76,28 @@ def reopen_incident(id: int):
     database.reopen_incident(id)
     return RedirectResponse(url=f"/incident/{id}", status_code=303)
 
+@app.post("/incident/{id}/delete")
+def delete_incident(id: int):
+    database.delete_incident(id)
+    return RedirectResponse(url="/", status_code=303)
+
+@app.post("/report/{id}/delete")
+def delete_report(id: int, redirect_url: Optional[str] = Form(None)):
+    incident_id = database.delete_report(id)
+    if incident_id:
+        try:
+            incident, reports = database.get_incident_data(incident_id)
+            loc = incident["location"] if incident else None
+            diagnosis = prolog_engine.analyze_incident(incident_id, reports, location=loc)
+            database.update_incident_diagnosis(incident_id, diagnosis)
+        except Exception as e:
+            print(f"Auto-analysis notice: {e}")
+    if redirect_url:
+        return RedirectResponse(url=redirect_url, status_code=303)
+    if incident_id:
+        return RedirectResponse(url=f"/incident/{incident_id}", status_code=303)
+    return RedirectResponse(url="/", status_code=303)
+
 @app.get("/report", response_class=HTMLResponse)
 def report_page(request: Request):
     return templates.TemplateResponse(request, "report.html", {})
@@ -88,6 +115,16 @@ def submit_public_report(
 
     incident_id = database.get_or_create_open_incident(final_location)
     database.add_report(incident_id, source_type, final_evidence)
+
+    # Automatically re-evaluate incident with Prolog upon report intake
+    try:
+        incident, reports = database.get_incident_data(incident_id)
+        loc = incident["location"] if incident else final_location
+        diagnosis = prolog_engine.analyze_incident(incident_id, reports, location=loc)
+        database.update_incident_diagnosis(incident_id, diagnosis)
+    except Exception as e:
+        print(f"Auto-analysis warning: {e}")
+
     params = urlencode({
         "incident_id": incident_id,
         "location": final_location,
