@@ -526,3 +526,93 @@ h4 { font-size: 1.4rem; }
   padding: 0 0.5rem;
   user-select: none;
 }
+
+
+/* ==============================================================================
+   PORTAL MODE HIGHLIGHTING & STATUS BADGES
+   ============================================================================== */
+.navbar.navbar-operator {
+  border-bottom: 3.5px solid #0284c7;
+  background: linear-gradient(180deg, #090d16 0%, #0f172a 100%);
+}
+
+.navbar.navbar-public {
+  border-bottom: 3.5px solid #d97706;
+  background: linear-gradient(180deg, #180f02 0%, #1c1917 100%);
+}
+
+.portal-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 1.1rem;
+  border-radius: 9999px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.portal-tag-operator {
+  background-color: rgba(2, 132, 199, 0.18);
+  color: #38bdf8;
+  border: 1.5px solid #0284c7;
+  box-shadow: 0 0 12px rgba(2, 132, 199, 0.35);
+}
+
+.portal-tag-public {
+  background-color: rgba(217, 119, 6, 0.2);
+  color: #fbbf24;
+  border: 1.5px solid #d97706;
+  box-shadow: 0 0 12px rgba(217, 119, 6, 0.35);
+}
+
+.pulse-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.pulse-dot-green {
+  background-color: #22c55e;
+  box-shadow: 0 0 8px #22c55e, 0 0 12px rgba(34, 197, 94, 0.6);
+  animation: pulse-dot-anim 1.8s infinite;
+}
+
+.pulse-dot-amber {
+  background-color: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b, 0 0 12px rgba(245, 158, 11, 0.6);
+  animation: pulse-dot-anim 1.8s infinite;
+}
+
+@keyframes pulse-dot-anim {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.8); opacity: 0.45; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.portal-banner {
+  border-radius: var(--radius);
+  padding: 0.75rem 1.35rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.portal-banner-operator {
+  background: #f0f9ff;
+  border: 1.5px solid #7dd3fc;
+  color: #0369a1;
+}
+
+.portal-banner-public {
+  background: #fffbeb;
+  border: 1.5px solid #fcd34d;
+  color: #92400e;
+}
