@@ -1,4 +1,5 @@
-
+from typing import Optional
+from urllib.parse import urlencode
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -32,10 +33,15 @@ def view_incident(request: Request, id: int):
     })
 
 @app.post("/incident/{id}/report")
-def add_incident_report(id: int, source_type: str = Form(...), evidence_category: str = Form(...)):
-    database.add_report(id, source_type, evidence_category)
+def add_incident_report(
+    id: int, 
+    source_type: str = Form(...), 
+    evidence_category: str = Form(...),
+    custom_evidence: Optional[str] = Form(None)
+):
+    final_evidence = (custom_evidence.strip() if custom_evidence and custom_evidence.strip() else "Other Technical Observation") if evidence_category == "other" else evidence_category.strip()
+    database.add_report(id, source_type, final_evidence)
     return RedirectResponse(url=f"/incident/{id}", status_code=303)
-
 
 @app.get("/report", response_class=HTMLResponse)
 def report_page(request: Request):
@@ -44,13 +50,24 @@ def report_page(request: Request):
 @app.post("/report")
 def submit_public_report(
     location: str = Form(...),
+    custom_location: Optional[str] = Form(None),
     source_type: str = Form(...),
-    evidence_category: str = Form(...)
+    evidence_category: str = Form(...),
+    custom_evidence: Optional[str] = Form(None)
 ):
-    incident_id = database.get_or_create_open_incident(location)
-    database.add_report(incident_id, source_type, evidence_category)
+    final_location = (custom_location.strip() if custom_location and custom_location.strip() else "Other Location") if location == "other" else location.strip()
+    final_evidence = (custom_evidence.strip() if custom_evidence and custom_evidence.strip() else "Other Observation") if evidence_category == "other" else evidence_category.strip()
+
+    incident_id = database.get_or_create_open_incident(final_location)
+    database.add_report(incident_id, source_type, final_evidence)
+    params = urlencode({
+        "incident_id": incident_id,
+        "location": final_location,
+        "source": source_type,
+        "evidence": final_evidence
+    })
     return RedirectResponse(
-        url=f"/report/success?incident_id={incident_id}&location={location}&source={source_type}&evidence={evidence_category}",
+        url=f"/report/success?{params}",
         status_code=303
     )
 
@@ -73,4 +90,4 @@ def analyze_incident(id: int):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
