@@ -1,2 +1,2 @@
-incident_location(7, residential_zone_1).
-report(7, citizen, power_outage).
+incident_location(9, industrial_park).
+report(9, factory, sparks_on_pole).
