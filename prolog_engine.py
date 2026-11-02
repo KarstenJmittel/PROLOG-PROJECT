@@ -1,8 +1,20 @@
 import os
+import re
 import shutil
 import subprocess
+import tempfile
 import threading
 from pathlib import Path
+
+def to_prolog_atom(val: str) -> str:
+    if not val:
+        return "unknown"
+    s = re.sub(r'[^a-zA-Z0-9_]+', '_', str(val).strip().lower()).strip('_')
+    if not s:
+        return "unknown"
+    if not s[0].isalpha() or s[0].isupper():
+        s = "item_" + s
+    return s
 
 class GridRescueProlog:
     def __init__(self):
@@ -10,7 +22,6 @@ class GridRescueProlog:
         
         self.base_dir = Path(__file__).resolve().parent
         self.kb_path = self.base_dir / "prolog" / "knowledge_base.pl"
-        self.temp_facts_path = self.base_dir / "prolog" / "temp_facts.pl"
         self.swipl_bin = self._find_swipl()
         
         print(f"Prolog Engine Initialized. Binary: {self.swipl_bin}")
@@ -30,43 +41,54 @@ class GridRescueProlog:
 
     def analyze_incident(self, incident_id, reports, location=None):
         with self.lock:
-            with open(self.temp_facts_path, "w") as f:
-                if location:
-                    clean_loc = str(location).strip().lower().replace(" ", "_")
-                    f.write(f"incident_location({incident_id}, {clean_loc}).\n")
-                for r in reports:
-                    source = r['source_type']
-                    evidence = r['evidence_category']
-                    f.write(f"report({incident_id}, {source}, {evidence}).\n")
-            
-            query = (
-                f"diagnose_fault({incident_id}, Fault), "
-                f"suspect_component({incident_id}, Suspect), "
-                f"incident_severity({incident_id}, Severity), "
-                f"recommend_action({incident_id}, Action), "
-                f"(incident_location({incident_id}, Loc), upstream_chain(Loc, Chain) -> true ; Chain = []), "
-                f"format('FAULT:~w~nSUSPECT:~w~nSEVERITY:~w~nACTION:~w~nCHAIN:~w~n', [Fault, Suspect, Severity, Action, Chain]), "
-                f"halt."
+            # Create an isolated temporary facts file for this specific analysis run
+            temp_file = tempfile.NamedTemporaryFile(
+                mode="w", 
+                suffix=".pl", 
+                prefix=f"facts_{incident_id}_",
+                dir=str(self.base_dir / "prolog"),
+                delete=False
             )
-            
-            cmd = [
-                self.swipl_bin,
-                "-q",
-                "-f", str(self.kb_path),
-                "-l", str(self.temp_facts_path),
-                "-g", query,
-                "-t", "halt"
-            ]
-            
-            result_data = {
-                "fault": "UNKNOWN FAULT",
-                "suspect_component": "unknown",
-                "severity": "STANDARD",
-                "upstream_path": "",
-                "action_plan": "Deploy field survey team to verify reports"
-            }
+            temp_path = Path(temp_file.name)
             
             try:
+                if location:
+                    clean_loc = to_prolog_atom(location)
+                    temp_file.write(f"incident_location({incident_id}, {clean_loc}).\n")
+                for r in reports:
+                    source = to_prolog_atom(r['source_type'])
+                    evidence = to_prolog_atom(r['evidence_category'])
+                    temp_file.write(f"report({incident_id}, {source}, {evidence}).\n")
+                temp_file.flush()
+                temp_file.close()
+
+                query = (
+                    f"diagnose_fault({incident_id}, Fault), "
+                    f"suspect_component({incident_id}, Suspect), "
+                    f"incident_severity({incident_id}, Severity), "
+                    f"recommend_action({incident_id}, Action), "
+                    f"(incident_location({incident_id}, Loc), upstream_chain(Loc, Chain) -> true ; Chain = []), "
+                    f"format('FAULT:~w~nSUSPECT:~w~nSEVERITY:~w~nACTION:~w~nCHAIN:~w~n', [Fault, Suspect, Severity, Action, Chain]), "
+                    f"halt."
+                )
+                
+                cmd = [
+                    self.swipl_bin,
+                    "-q",
+                    "-f", str(self.kb_path),
+                    "-l", str(temp_path),
+                    "-g", query,
+                    "-t", "halt"
+                ]
+                
+                result_data = {
+                    "fault": "UNKNOWN FAULT",
+                    "suspect_component": "unknown",
+                    "severity": "STANDARD",
+                    "upstream_path": "",
+                    "action_plan": "Deploy field survey team to verify reports"
+                }
+                
                 result = subprocess.run(cmd, capture_output=True, text=True, check=True)
                 output = result.stdout.strip()
                 
@@ -91,10 +113,27 @@ class GridRescueProlog:
             except subprocess.CalledProcessError as e:
                 print(f"PROLOG ERROR STDOUT: {e.stdout}")
                 print(f"PROLOG ERROR STDERR: {e.stderr}")
-                result_data["fault"] = f"PROLOG ERROR: {e.stderr.strip()}"
-                return result_data
+                return {
+                    "fault": f"PROLOG ERROR: {e.stderr.strip()}",
+                    "suspect_component": "unknown",
+                    "severity": "STANDARD",
+                    "upstream_path": "",
+                    "action_plan": "Review incident logs and retry analysis"
+                }
             except FileNotFoundError:
-                result_data["fault"] = "SWI-PROLOG NOT CONFIGURED"
-                return result_data
+                return {
+                    "fault": "SWI-PROLOG NOT CONFIGURED",
+                    "suspect_component": "unknown",
+                    "severity": "STANDARD",
+                    "upstream_path": "",
+                    "action_plan": "Ensure SWI-Prolog is installed and in system PATH"
+                }
+            finally:
+                # Clean up temporary facts file
+                try:
+                    if temp_path.exists():
+                        temp_path.unlink()
+                except Exception:
+                    pass
 
 prolog_engine = GridRescueProlog()
