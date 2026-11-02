@@ -1,92 +1,109 @@
-# Prolog Project
+# GridRescue - Power Grid Decision Support System
 
-## Overview
-This project combines Python and Prolog to build a web-based application that uses logical rules and a knowledge base to process information and generate results.
+An intelligent electrical power grid incident decision-support system that combines a **FastAPI** web backend with a **SWI-Prolog** logical inference engine and **PostgreSQL** database.
 
-## Technologies Used
-- **Python** – Application logic and backend
-- **Prolog** – Knowledge representation and logical reasoning
-- **Flask** – Web application framework
-- **HTML** – Web page structure
-- **CSS** – User interface styling
-- **Database** – Data storage and management
+---
 
-## Project Structure
+## ⚡ Overview
+During power outages, information arrives in fragments from disparate sources (citizens, field linemen, SCADA breaker alerts, commercial factories). **GridRescue** correlates these multi-party signals, recursively traces power network topology, identifies suspect root components, and prescribes prioritized emergency response actions.
+
+---
+
+## 🛠️ Technologies Used
+- **Python 3.10+** – Web backend & API services
+- **FastAPI** – High-performance asynchronous web framework
+- **SWI-Prolog** – Symbolic AI, logical reasoning, and graph traversal
+- **PostgreSQL** – Relational incident & evidence persistence
+- **Jinja2 & CSS** – Responsive Operator & Citizen interfaces
+
+---
+
+## 📁 Project Structure
 ```text
 PROLOG-PROJECT/
-├── .vscode/
-│   └── settings.json
 ├── prolog/
-│   ├── knowledge_base.pl
-│   └── temp_facts.pl
+│   └── knowledge_base.pl     # Grid topology, fault correlation rules, priority triage
 ├── static/
-│   └── style.css
+│   └── style.css             # Unified application styling & portal status badges
 ├── templates/
-│   ├── base.html
-│   ├── dashboard.html
-│   └── incident.html
-├── app.py
-├── database.py
-├── prolog_engine.py
-├── .gitignore
+│   ├── base.html             # Base layout with portal-mode indicator
+│   ├── dashboard.html        # Operator console with metrics & status filters
+│   ├── incident.html         # Incident details, visual topology map & resolution protocol
+│   ├── report.html           # Public citizen outage reporting portal
+│   └── report_success.html   # Report ingestion confirmation
+├── tests/
+│   └── test_prolog.py        # Automated unit tests for Prolog deduction & atoms
+├── app.py                    # FastAPI application routes & lifecycle management
+├── database.py               # PostgreSQL connection & data access layer
+├── prolog_engine.py          # SWI-Prolog process execution & atom sanitizer
+├── requirements.txt          # Python dependencies
+├── .env.example              # Environment variables template
+├── .env                      # Local configuration file (git-ignored)
 └── README.md
 ```
 
-## Features
-- Web-based user interface
-- Python backend integration
-- Prolog knowledge base and logical reasoning
-- Database integration
-- Dashboard and incident-related pages
+---
 
-## Installation
+## 🚀 Installation & Setup
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/KarstenJmittel/PROLOG-PROJECT.git
-cd PROLOG-PROJECT
-```
+### 1. Prerequisites
+- **Python 3.10+**
+- **SWI-Prolog** (Ensure `swipl` is installed and accessible in your system PATH)
+- **PostgreSQL** (Running locally or accessible via network)
 
-### 2. Create a Virtual Environment
-```bash
-python -m venv venv
-```
+### 2. Configure Environment Variables
+Copy the `.env.example` file to `.env` and adjust database credentials:
+```ini
+DB_NAME=Gridrescue
+DB_USER=postgres
+DB_PASSWORD=your_password
+DB_HOST=localhost
+DB_PORT=5432
 
-Activate it on Windows:
-```bash
-venv\Scripts\activate
+APP_HOST=127.0.0.1
+APP_PORT=8000
 ```
 
 ### 3. Install Dependencies
-Install the Python packages required by the project. If a `requirements.txt` file is available, run:
-
 ```bash
+python -m venv venv
+venv\Scripts\activate      # On Windows
 pip install -r requirements.txt
 ```
-
-Ensure that SWI-Prolog is installed and available in your system PATH if the application uses it to execute Prolog queries.
 
 ### 4. Run the Application
 ```bash
 python app.py
 ```
+Or with Uvicorn directly:
+```bash
+uvicorn app:app --host 127.0.0.1 --port 8000 --reload
+```
 
-Open the local URL displayed in the terminal in your browser.
+---
 
-## Usage
-1. Start the application.
-2. Open the dashboard in your browser.
-3. Use the available pages and features.
-4. The backend processes application data and interacts with the Prolog knowledge base.
+## 🌐 Application Portals
 
-## Future Improvements
-- Improve error handling and validation.
-- Add more Prolog rules and facts.
-- Enhance the dashboard and user experience.
-- Add automated tests and documentation.
+- **Operator Console**: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+  - Live incident log, summary statistics cards (Total, Active, Diagnosed, Resolved)
+  - Status filtering tabs (`All`, `Active / Open`, `Resolved`)
+  - Run automated Prolog tree diagnosis and view root-cause analysis
+  - Record technician closeout notes to officially resolve incidents
 
-## Author
-**KarstenJmittel**
+- **Public Report Portal**: [http://127.0.0.1:8000/report](http://127.0.0.1:8000/report)
+  - Citizen & community hazard intake
+  - Supports predefined power zones and custom "Other" district specifications
+  - Supports standard blackout/sparking observations and custom hazard descriptions
 
-## License
+---
+
+## 🧪 Running Automated Tests
+Run the Prolog reasoning test suite:
+```bash
+python -m unittest tests/test_prolog.py
+```
+
+---
+
+## 📄 License
 This project is available for educational and learning purposes.
