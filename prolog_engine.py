@@ -39,7 +39,7 @@ class GridRescueProlog:
                 return c
         return "swipl"
 
-    def analyze_incident(self, incident_id, reports, location=None):
+    def analyze_incident(self, incident_id, reports, location=None, down_nodes=None):
         with self.lock:
             # Create an isolated temporary facts file for this specific analysis run
             temp_file = tempfile.NamedTemporaryFile(
@@ -55,6 +55,11 @@ class GridRescueProlog:
                 if location:
                     clean_loc = to_prolog_atom(location)
                     temp_file.write(f"incident_location({incident_id}, {clean_loc}).\n")
+                if down_nodes:
+                    temp_file.write(":- multifile node_status/2.\n")
+                    for d_node in down_nodes:
+                        clean_d = to_prolog_atom(d_node)
+                        temp_file.write(f"node_status({clean_d}, down).\n")
                 for r in reports:
                     source = to_prolog_atom(r['source_type'])
                     evidence = to_prolog_atom(r['evidence_category'])
